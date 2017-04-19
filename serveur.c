@@ -119,12 +119,16 @@ client_socket = accept(ma_socket,(struct sockaddr *)&client_address,&mon_address
 char* tab_user=malloc(sizeof(char)*4);
  lg =read(client_socket,tab_user,sizeof(tab_user));
  	afficher_tab1(tab_user);
- 	partie(tab_user);
+ 	int partie1=partie(tab_user);
+ 	if (partie1==0)
+ 	{
+ 		printf("nooooop\n");
+ 	}
     //printf("le serveur a recu: %s\n",buffer);
     //sprintf(buffer,"%s du serveur",buffer);
     //write(client_socket,buffer, 512);
-    h_shutdown(client_socket,2);
-    h_close(client_socket);
+    shutdown(client_socket,2);
+    close(client_socket);
 }
 
 
@@ -137,9 +141,8 @@ void init_tab_find(char* tab){
 	 char couleur[5]={'r','v','n','j','b'};
 	 int indice=0;
 	for (int i = 0; i <4; ++i)
-	{
+	{	//fonction random pour faire un tabfind aléatoire
 		indice= rand()%5;
-		printf("indice %d\n",indice);
 		*(tab+i)=couleur[indice];
 	}
 }
@@ -172,6 +175,7 @@ int jouer_tour(char* tab_user,char* tab_to_find){
 		}
 	j++;
 	}while(j<4); */
+	//VERIFIE SI C'EST BIEN PLACE
 	for (int i = 0; i < 4; ++i)
 	{
 		if (tab_user[i]==tab_to_find[i])
@@ -181,7 +185,7 @@ int jouer_tour(char* tab_user,char* tab_to_find){
 
 		}
 	}
-
+	printf("nbr valide : %d\n",nbr_valide );
 	if (nbr_valide==4)
 	{
 		return 1;
@@ -195,15 +199,23 @@ int jouer_tour(char* tab_user,char* tab_to_find){
 
 
 int partie(char* tab_user)
-{	
+{	//on cree le tableaux à trouver
 	char* tab_to_find=malloc(sizeof(char)*4);
 	init_tab_find(tab_to_find);
-	printf("(REPONSE= ");
+	//affiche le tableaux à trouver(utile pour tester le programme)
+	printf("(REPONSE= \n");
 	afficher_tab1(tab_to_find);
 	printf(")");
-	jouer_tour(tab_user,tab_to_find);
-	printf("Vous avez gagne :)\n");
-	
+	int test=0;
+	//effectue un tour(test si tab user== tab find)
+	test=jouer_tour(tab_user,tab_to_find);
+	if (test==1)
+	{
+		printf("Vous avez gagne :)\n");
+		return 1;
+	}
+	else
+		printf("retentez\n"); // si partie retourne 0, il faut que le serveur renvoie le nombre de batonnet valide et redemande un tableaux user.	
 	free(tab_to_find);
 	
 
