@@ -24,11 +24,12 @@
 #include "fon.h"     		/* Primitives de la boite a outils */
 
 #define SERVICE_DEFAUT "1111"
+#define NB_COLOUR 8
 void init_tab_find(char*);
 static void purger1(void);
 void afficher_tab1(char*);
-int jouer_tour(char*,char*);
-int partie(char*,char*,int);
+int jouer_tour(int,char*,char*,char*);
+int partie(int,char*,char*,char*,int);
 
 void serveur_appli (char *service);   /* programme serveur */
 
@@ -38,7 +39,8 @@ int ma_socket;
 /******************************************************************************/	
 /*---------------- programme serveur ------------------------------*/
 void afficher_tab1(char* tab){
-	for (int i = 0; i <4; ++i)
+	int i;
+	for (i = 0; i <4; ++i)
 	{
 		printf(" tab [%d] = %c\n",i,tab[i] );
 	}
@@ -116,18 +118,27 @@ void serveur_appli(char *service)
 
 //JEU
 
-	char* tab_user=malloc(sizeof(char)*4);
-	char* tab_to_find=malloc(sizeof(char)*4);
-	init_tab_find(tab_to_find);
- 	read(client_socket,tab_user,sizeof(tab_user));
- 	afficher_tab1(tab_user);
- 	int partie1=partie(tab_user,tab_to_find,client_socket);
+	int lvl = 1; // Niveau de difficultÃ©
+	
+	int tab_size = 4; // A faire en fonction du niveau de difficultÃ©
+	char* tab_user=malloc(sizeof(char)*tab_size); // grille joueur
+	char* tab_to_find=malloc(sizeof(char)*tab_size); // grille Ã  trouver
+	char* tab_answer=malloc(sizeof(char)*tab_size); // grille rÃ©ponse
+	
+	init_tab_find(tab_to_find); //crÃ©e une grille Ã  trouver de maniÃ¨re alÃ©atoire
+ 	
+	// ATTENTE DE LA GRILLE DU JOUEUR
+	read(client_socket,tab_user,sizeof(tab_user));
+ 	
+
+	afficher_tab1(tab_user);
+ 	int partie1=partie(tab_size,tab_user,tab_to_find,tab_answer,client_socket);
  	if (partie1==0)
  	{
  		printf("Echec\n");
  	}
  	else
- 		printf("c'est gagné\n");
+ 		printf("c'est gagnÃ©\n");
     //printf("le serveur a recu: %s\n",buffer);
     //sprintf(buffer,"%s du serveur",buffer);
     //write(client_socket,buffer, 512);
@@ -142,11 +153,12 @@ void serveur_appli(char *service)
 
 void init_tab_find(char* tab){
 	 srand(time(NULL));
-	 char couleur[5]={'r','v','n','j','b'};
+	 char couleur[NB_COLOUR]={'r','y','g','b','o','p','f'};//red, yellow, green, blue, orange, purple, fushia
 	 int indice=0;
-	for (int i = 0; i <4; ++i)
-	{	//fonction random pour faire un tabfind aléatoire
-		indice= rand()%5;
+	int i;
+	for (i = 0; i <4; ++i)
+	{	//fonction random pour faire un tabfind alÃ©atoire
+		indice= rand()%NB_COLOUR;
 		*(tab+i)=couleur[indice];
 	}
 }
@@ -154,76 +166,52 @@ void init_tab_find(char* tab){
 
 
 
-int jouer_tour(char* tab_user,char* tab_to_find){
-	int nbr_valide=0;
-	int nbr_semi_valide=0;
-	int nbr_invalide=0;
-	int j=0;
-	/*do{	
-		for (int i = 0; i <4; ++i)
-		{			
-			if(tab_user[j]==tab_to_find[i] && i==j){
-				nbr_valide++;
-				printf("la couleur %c en position %d  est valide  et à la bonne place\n",tab_user[j],j );
-				j++;
-				i=4;
-			}
-			else if(tab_user[j]==tab_to_find[i] && i!=j){
-				nbr_semi_valide++;
-				printf("la couleur %c en position %d  est valide mais pas à la bonne place\n",tab_user[j],j );
-				j++;
-				i=4;
-			}
-			else
-				nbr_invalide++;
-		}
-	j++;
-	}while(j<4); */
-	//VERIFIE SI C'EST BIEN PLACE
-	for (int i = 0; i < 4; ++i)
-	{
-		if (tab_user[i]==tab_to_find[i])
-		{
-			printf("Le couleur position %d est bien place\n",i );
-			nbr_valide++;
-
-		}
+int jouer_tour(int tab_size,char* tab_user,char* tab_to_find,char* tab_answer){
+  int used[tab_size];
+  int tmp;
+  for (tmp = 0; tmp < tab_size; tmp++) used[tmp] = 0;
+  
+  
+  int i;
+  for( i = 0; i<tab_size;i++){
+    char cc = tab_user[i];
+    if (tab_answer[i] != 'r' || tab_answer[i] != 'w'){
+      
+      if(cc = tab_to_find[i] && used[i] != 0){
+	tab_answer[i] = 'r';
+	used[i] = 1;
+      }else{
+	int j;
+	for (j = 0; j < tab_size;j++){
+	  if(cc == tab_to_find[j] && used[j] != 0){
+	    if(tab_user[j] == tab_to_find[j]){ 
+	      tab_answer[j] = 'r';
+	    } else {
+	      tab_answer[i]= 'w';
+		} 
+	    used[j] = 1;
+	  }else tab_answer[i] = ' ';
 	}
-	
-	if (nbr_valide==4)
-	{
-		return 4;
-	}
-	else
-		return nbr_valide;
-
+      }
+    }
+  }
+  return 0;
 }
 
 
 
 
-int partie(char* tab_user,char* tab_to_find,int client_socket)
-{	//on cree le tableaux à trouver
-	
-	//affiche le tableaux à trouver(utile pour tester le programme)
+  int partie(int tab_size,char* tab_user,char* tab_to_find,char* tab_answer,int client_socket)
+{	
+	//affiche le tableaux Ã  trouver(utile pour tester le programme)
 	printf("(REPONSE= \n");
 	afficher_tab1(tab_to_find);
 	printf(")");
 	int test=0;
 	//effectue un tour(test si tab user== tab find)
-	test=jouer_tour(tab_user,tab_to_find);
-	if (test==4)
-	{
-		printf("Vous avez gagne :)\n");
-		return 1;
-	}
-	else{
-		printf("Vous avez trouve %d couleurs \n",test);
-		printf("nbr envoyé = %d\n",test );
-		send(client_socket,&test,sizeof(test),0);
-		free(tab_to_find);
-		return 0;
-	}
-		 // si partie retourne 0, il faut que le serveur renvoie le nombre de batonnet valide et redemande un tableaux user.	
-
+	test=jouer_tour(tab_size,tab_user,tab_to_find,tab_answer);
+ 
+	//Le serveur doit renvoyer le tableau de rÃ©ponse avec les battonets rouges et blancs
+// si partie retourne 0, il faut que le serveur renvoie le nombre de batonnet valide et redemande un tableaux user.	
+	return 0;
 }
