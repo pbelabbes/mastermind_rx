@@ -28,7 +28,7 @@ void init_tab_find(char*);
 static void purger1(void);
 void afficher_tab1(char*);
 int jouer_tour(char*,char*);
-int partie(char*);
+int partie(char*,char*,int);
 
 void serveur_appli (char *service);   /* programme serveur */
 
@@ -88,42 +88,46 @@ void serveur_appli(char *service)
 
 {
 
-int client_socket;
-struct sockaddr_in mon_address, client_address;
-int mon_address_longueur, lg;
+	int client_socket;
+	struct sockaddr_in mon_address, client_address;
+	int mon_address_longueur, lg;
 
-bzero(&mon_address,sizeof(mon_address));
-mon_address.sin_port = htons(30000);
-mon_address.sin_family = AF_INET;
-mon_address.sin_addr.s_addr = htonl(INADDR_ANY);
+	bzero(&mon_address,sizeof(mon_address));
+	mon_address.sin_port = htons(30000);
+	mon_address.sin_family = AF_INET;
+	mon_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-/* creation de socket */
-if ((ma_socket = socket(AF_INET,SOCK_STREAM,0))== -1)
-{
-  printf("ca chie avec la creation\n");
-  exit(0);
-}
-/* bind serveur - socket */
-bind(ma_socket,(struct sockaddr *)&mon_address,sizeof(mon_address));
+	/* creation de socket */
+	if ((ma_socket = socket(AF_INET,SOCK_STREAM,0))== -1)
+	{
+	  printf("ca chie avec la creation\n");
+	  exit(0);
+	}
+	/* bind serveur - socket */
+	bind(ma_socket,(struct sockaddr *)&mon_address,sizeof(mon_address));
 
-/* ecoute sur la socket */
-listen(ma_socket,5);
+	/* ecoute sur la socket */
+	listen(ma_socket,5);
 
-/* accept la connexion */
-mon_address_longueur = sizeof(client_address);
+	/* accept la connexion */
+	mon_address_longueur = sizeof(client_address);
 
-client_socket = accept(ma_socket,(struct sockaddr *)&client_address,&mon_address_longueur);
+	client_socket = accept(ma_socket,(struct sockaddr *)&client_address,&mon_address_longueur);
 
 //JEU
 
-char* tab_user=malloc(sizeof(char)*4);
- lg =read(client_socket,tab_user,sizeof(tab_user));
+	char* tab_user=malloc(sizeof(char)*4);
+	char* tab_to_find=malloc(sizeof(char)*4);
+	init_tab_find(tab_to_find);
+ 	read(client_socket,tab_user,sizeof(tab_user));
  	afficher_tab1(tab_user);
- 	int partie1=partie(tab_user);
+ 	int partie1=partie(tab_user,tab_to_find,client_socket);
  	if (partie1==0)
  	{
- 		printf("nooooop\n");
+ 		printf("Echec\n");
  	}
+ 	else
+ 		printf("c'est gagné\n");
     //printf("le serveur a recu: %s\n",buffer);
     //sprintf(buffer,"%s du serveur",buffer);
     //write(client_socket,buffer, 512);
@@ -185,23 +189,22 @@ int jouer_tour(char* tab_user,char* tab_to_find){
 
 		}
 	}
-	printf("nbr valide : %d\n",nbr_valide );
+	
 	if (nbr_valide==4)
 	{
-		return 1;
+		return 4;
 	}
 	else
-		return 0;
+		return nbr_valide;
 
 }
 
 
 
 
-int partie(char* tab_user)
+int partie(char* tab_user,char* tab_to_find,int client_socket)
 {	//on cree le tableaux à trouver
-	char* tab_to_find=malloc(sizeof(char)*4);
-	init_tab_find(tab_to_find);
+	
 	//affiche le tableaux à trouver(utile pour tester le programme)
 	printf("(REPONSE= \n");
 	afficher_tab1(tab_to_find);
@@ -209,15 +212,18 @@ int partie(char* tab_user)
 	int test=0;
 	//effectue un tour(test si tab user== tab find)
 	test=jouer_tour(tab_user,tab_to_find);
-	if (test==1)
+	if (test==4)
 	{
 		printf("Vous avez gagne :)\n");
 		return 1;
 	}
-	else
-		printf("retentez\n"); // si partie retourne 0, il faut que le serveur renvoie le nombre de batonnet valide et redemande un tableaux user.	
-	free(tab_to_find);
-	
+	else{
+		printf("Vous avez trouve %d couleurs \n",test);
+		printf("nbr envoyé = %d\n",test );
+		send(client_socket,&test,sizeof(test),0);
+		free(tab_to_find);
+		return 0;
+	}
+		 // si partie retourne 0, il faut que le serveur renvoie le nombre de batonnet valide et redemande un tableaux user.	
 
-	return 0;
 }

@@ -152,7 +152,11 @@ char* tab_user=malloc(sizeof(char)*4);
 start_client(tab_user);
 /* envoie de donne et reception */
 write(to_server_socket,tab_user,sizeof(tab_user));
-//read(to_server_socket,buffer,512);
+
+// réception du nombre de couleurs trouvés
+int nbr_valides;
+recv(to_server_socket,&nbr_valides, sizeof nbr_valides, 0);
+printf("Vous avez reussi a trouver %d batonnets\n",nbr_valides );
 //printf("%s",buffer);
 /* fermeture de la connection */
 h_shutdown(to_server_socket,2);
