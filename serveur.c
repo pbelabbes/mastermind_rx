@@ -40,11 +40,13 @@ int ma_socket;
 /******************************************************************************/	
 /*---------------- programme serveur ------------------------------*/
 void afficher_tab1(char* tab){
+  printf("\n[");
   int i;
   for (i = 0; i <TAB_SIZE; ++i)
     {
-      printf(" tab [%d] = %c\n",i,tab[i] );
+      printf("%c | ",tab[i] );
     }
+  printf("]\n");
 }
 
 static void purger1(void)
@@ -52,7 +54,9 @@ static void purger1(void)
   int c;
   
   while ((c = getchar()) != '\n' && c != EOF)
-    {}
+    {
+      printf("Purge de %c\n",c);
+    }
 }
 
 
@@ -123,7 +127,7 @@ void serveur_appli(char *service)
   char tab_size_data[1];
   h_reads(client_socket,tab_size_data, sizeof(tab_size_data));
   TAB_SIZE = atoi (tab_size_data);
-
+  printf("Taille du tableau : %c\n", tab_size_data[0]);
   
   char* tab_user=malloc(sizeof(char)*TAB_SIZE); // grille joueur
   char* tab_to_find=malloc(sizeof(char)*TAB_SIZE); // grille à trouver
@@ -148,10 +152,10 @@ void serveur_appli(char *service)
 
 void init_tab_find(char* tab){
   srand(time(NULL));
-  char couleur[NB_COLOUR]={'r','y','g','b','o','p','f'};//red, yellow, green, blue, orange, purple, fushia
+  char couleur[NB_COLOUR]={'r','y','g','b','o','p','f','w'};//red, yellow, green, blue, orange, purple, fushia,white
   int indice=0;
   int i;
-  for (i = 0; i <4; ++i)
+  for (i = 0; i <TAB_SIZE; ++i)
     {	//fonction random pour faire un tabfind aléatoire
       indice= rand()%NB_COLOUR;
       *(tab+i)=couleur[indice];
@@ -172,28 +176,39 @@ int jouer_tour(char* tab_user,char* tab_to_find,char* tab_answer){
   int i;
   for( i = 0; i<TAB_SIZE;i++){
     char cc = tab_user[i];
-    if (tab_answer[i] != 'r' || tab_answer[i] != 'w'){
-      
-      if(cc = tab_to_find[i] && used[i] != 0){
+    printf("Caractère courant : %d est %c\n",i,tab_user[i]);
+    afficher_tab1(tab_answer);
+    if (tab_answer[i] != 'r' && tab_answer[i] != 'w'){
+      //printf("tab_answer[%d] != 'r' et 'w'\n",i);
+      for (tmp = 0; tmp<TAB_SIZE; tmp++) printf("%d|",used[tmp]);
+      printf("\n");
+
+      if(cc == tab_to_find[i] && used[i] == 0){
+	printf("%c = %c pour i = %d\n",tab_to_find[i],tab_user[i],i);
 	tab_answer[i] = 'r';
 	used[i] = 1;
 	r++;
       }else{
 	int j;
 	for (j = 0; j < TAB_SIZE;j++){
-	  if(cc == tab_to_find[j] && used[j] != 0){
+	  if(cc == tab_to_find[j] && used[j] == 0){
 	    if(tab_user[j] == tab_to_find[j]){ 
+	      printf("%c = %c pour j = %d\n",tab_to_find[j],tab_user[j],j);
 	      tab_answer[j] = 'r';
 	      r++;
 	    } else {
 	      tab_answer[i]= 'w';
+	      printf("%c = %c pour i = %d et j =%d\n",tab_to_find[j],tab_user[i],i,j);
 	    } 
 	    used[j] = 1;
+	    break;
 	  }else tab_answer[i] = ' ';
 	}
       }
     }
   }
+  printf("Table réponse\n");
+  afficher_tab1(tab_answer);
   return (r == TAB_SIZE);
 }
 
@@ -203,19 +218,27 @@ int jouer_tour(char* tab_user,char* tab_to_find,char* tab_answer){
 int partie(char* tab_user,char* tab_to_find,char* tab_answer,int client_socket)
 {	
   //affiche le tableaux à trouver(utile pour tester le programme)
-  printf("(REPONSE= \n");
+  printf("(Grille à trouver = ");
   afficher_tab1(tab_to_find);
-  printf(")");
   //effectue un tour(test si tab user== tab find)
   
   // ATTENTE DE LA GRILLE DU JOUEUR
   h_reads(client_socket,tab_user,sizeof(tab_user));
-  
+  printf("Grille reçue");
+  afficher_tab1(tab_user);
   while (!(jouer_tour(tab_user,tab_to_find,tab_answer))){
     
+    printf("\nEnvoie tab_answer : \n");
+    afficher_tab1(tab_answer);
+    h_writes(client_socket,tab_answer,sizeof(tab_answer));
+
+    printf("Début purge");
+    purger1();
+
     // ATTENTE DE LA NOUVELLE GRILLE DU JOUEUR
+    printf("Attente d'un nouvelle table ...\n");
     h_reads(client_socket,tab_user,sizeof(tab_user));
-  
+    
   } 
   return 0 ;
 }

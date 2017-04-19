@@ -39,18 +39,22 @@ int TAB_SIZE;
 
 void afficher_tab(char* tab){
   int i;	
+  printf("\n[");
   for (i = 0; i <TAB_SIZE; ++i)
 	{
-		printf(" tab [%d] = %c\n",i,tab[i] );
+		printf(" %c |",tab[i] );
 	}
+  printf("]\n");
 }
 
 static void purger(void)
 {
     int c;
-
+    printf("Dans la purge\n");
     while ((c = getchar()) != '\n' && c != EOF)
-    {}
+    {
+      printf("Purge de %c\n",c);
+    }
 }
 
 void level_choice(){
@@ -75,6 +79,7 @@ void level_choice(){
 
 void remplir_tab_user(char* tab){
 	char inserer=0;
+	printf("Les couleurs sont : r,y,g,b,o,p,f,w");
 	int i;
 	for (i = 0; i < TAB_SIZE; ++i)
 	{	printf("Choisissez la %dieme couleur ",i);
@@ -82,13 +87,15 @@ void remplir_tab_user(char* tab){
 		purger();
 		*(tab+i)=inserer;
 	}
-}
+	}
 
 void start_client(char* tab_user)
 {      
 	level_choice();
 	purger();
 	remplir_tab_user(tab_user);
+	printf("\n Taille de la grille : %d\n",TAB_SIZE);
+	afficher_tab(tab_user);
 }
 
 int check_tab(char* tab_answer){
@@ -173,7 +180,9 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
   int gagner = 0; // booléen de victoire
   
   /* envoie de la taille de la grille */
-  char tab_size_data[1] = {(char) TAB_SIZE};
+  char tab_size_data[1];
+  tab_size_data[0] = '0'+TAB_SIZE;
+  printf("Taille envoyée : %c",tab_size_data[0]);
   h_writes(to_server_socket,tab_size_data,sizeof(tab_size_data));
   
   /* envoie de donne et reception */
@@ -185,14 +194,21 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
    
   while(!gagner){
     gagner = check_tab(tab_answer);
+    printf("Vous avez : %d",gagner);
     printf("La table de réponse est la suivante : \n");
     afficher_tab(tab_answer);
     printf("r : bonne position, w : présent dans la grille mais mauvaise position\n");
     remplir_tab_user(tab_user);
     
+    printf("Envoie de la grille :\n");
+    afficher_tab(tab_user);
     /* envoie de donne et reception */
     h_writes(to_server_socket,tab_user,sizeof(tab_user));
     
+    printf("Début purge");
+    purger();
+
+    printf("attente de réception de la grille réponse ...\n");
     // réception du nombre de couleurs trouvé
     h_reads(to_server_socket,tab_answer, sizeof tab_answer);
     
