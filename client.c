@@ -76,10 +76,10 @@ void level_choice(){
 
 void remplir_tab_user(char* tab){
 	char inserer=0;
-	printf("Les couleurs sont : r,y,g,b,o,p,f,w");
+	printf("Les couleurs sont : r,y,g,b,o,p,f,w\n");
 	int i;
 	for (i = 0; i < TAB_SIZE; ++i)
-	{	printf("Choisissez la %dieme couleur ",i);
+	{	printf("Choisissez la %dieme couleur ",i+1);
 		scanf("%c",&inserer);
 		purger();
 		*(tab+i)=inserer;
@@ -130,6 +130,8 @@ int main(int argc, char *argv[])
 		  printf("Usage:client serveur(nom ou @IP)  service (nom ou port) \n");
 		  exit(1);
 	}
+	
+	printf("L'adresse du serveur est %s et le service est %s\n",serveur,service);
 
 	/* serveur est le nom (ou l'adresse IP) auquel le client va acceder */
 	/* service le numero de port sur le serveur correspondant au  */
