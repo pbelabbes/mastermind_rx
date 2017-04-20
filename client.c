@@ -50,11 +50,8 @@ void afficher_tab(char* tab){
 static void purger(void)
 {
     int c;
-    printf("Dans la purge\n");
-    while ((c = getchar()) != '\n' && c != EOF)
-    {
-      printf("Purge de %c\n",c);
-    }
+    while ((c = getchar()) != '\n' && c != EOF);
+
 }
 
 void level_choice(){
@@ -87,7 +84,7 @@ void remplir_tab_user(char* tab){
 		purger();
 		*(tab+i)=inserer;
 	}
-	}
+}
 
 void start_client(char* tab_user)
 {      
@@ -194,7 +191,7 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
    
   while(!gagner){
     gagner = check_tab(tab_answer);
-    printf("Vous avez : %d",gagner);
+    if(gagner) break;
     printf("La table de réponse est la suivante : \n");
     afficher_tab(tab_answer);
     printf("r : bonne position, w : présent dans la grille mais mauvaise position\n");
@@ -207,15 +204,15 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
     
     //  printf("Début purge");
     // purger();
-
+    
     printf("attente de réception de la grille réponse ...\n");
     // réception du nombre de couleurs trouvé
     h_reads(to_server_socket,tab_answer, sizeof tab_answer);
     
   }
-
+  
   printf("Féliciation vous avez gagné !");
-
+  
   /* fermeture de la connection */
   h_shutdown(to_server_socket,2);
   h_close(to_server_socket);

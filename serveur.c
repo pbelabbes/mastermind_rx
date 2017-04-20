@@ -52,9 +52,7 @@ void afficher_tab1(char* tab){
 static void purger1(void)
 {
   int c;
-  printf("Dans purge");
   while ((c = getchar()) != '\n' && c != EOF);
-  printf("Fin purge");
 }
 
 
@@ -160,7 +158,10 @@ void init_tab_find(char* tab){
     }
 }
 
-
+void nettoyerReponse(char* tab_answer){
+  int i;
+  for (i = 0; i < TAB_SIZE; i++) tab_answer[i] = ' ';
+}
 
 
 int jouer_tour(char* tab_user,char* tab_to_find,char* tab_answer){
@@ -224,15 +225,16 @@ int partie(char* tab_user,char* tab_to_find,char* tab_answer,int client_socket)
   h_reads(client_socket,tab_user,sizeof(tab_user));
   printf("Grille reçue");
   afficher_tab1(tab_user);
-  while (!(jouer_tour(tab_user,tab_to_find,tab_answer))){
-    
+  int continu = 1;
+  while (continu){
+    continu = !(jouer_tour(tab_user,tab_to_find,tab_answer));
     printf("\nEnvoie tab_answer : \n");
     afficher_tab1(tab_answer);
     h_writes(client_socket,tab_answer,sizeof(tab_answer));
 
-    // printf("Début purge");
-    // purger1();
-
+    nettoyerReponse(tab_answer);
+    
+    if( !continu ) break;
     // ATTENTE DE LA NOUVELLE GRILLE DU JOUEUR
     printf("Attente d'un nouvelle table ...\n");
     h_reads(client_socket,tab_user,sizeof(tab_user));
