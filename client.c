@@ -205,8 +205,8 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
     /* envoie de donne et reception */
     h_writes(to_server_socket,tab_user,sizeof(tab_user));
     
-    printf("Début purge");
-    purger();
+    //  printf("Début purge");
+    // purger();
 
     printf("attente de réception de la grille réponse ...\n");
     // réception du nombre de couleurs trouvé

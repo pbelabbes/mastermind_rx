@@ -52,11 +52,9 @@ void afficher_tab1(char* tab){
 static void purger1(void)
 {
   int c;
-  
-  while ((c = getchar()) != '\n' && c != EOF)
-    {
-      printf("Purge de %c\n",c);
-    }
+  printf("Dans purge");
+  while ((c = getchar()) != '\n' && c != EOF);
+  printf("Fin purge");
 }
 
 
@@ -232,8 +230,8 @@ int partie(char* tab_user,char* tab_to_find,char* tab_answer,int client_socket)
     afficher_tab1(tab_answer);
     h_writes(client_socket,tab_answer,sizeof(tab_answer));
 
-    printf("Début purge");
-    purger1();
+    // printf("Début purge");
+    // purger1();
 
     // ATTENTE DE LA NOUVELLE GRILLE DU JOUEUR
     printf("Attente d'un nouvelle table ...\n");
