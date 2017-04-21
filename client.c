@@ -15,6 +15,7 @@
 #include <curses.h> 		/* Primitives de gestion d'残ran */
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -27,12 +28,19 @@
 void client_appli (char *serveur, char *service);
 static void purger(void);
 void afficher_tab(char*);
-void start_client(char*);
+void start_client();
 void level_choice();
-void remplir_tab_user(char*);
+void remplir_tab_user();
+void show_header(int with);
+void show_tab_user(int with);
+void show_tab_answer(int with);
+void show_screen();
 
 int TAB_SIZE;
-
+struct winsize w;
+char* tab_user;
+char* tab_answer;
+int show_indice;
 
 /*****************************************************************************/
 /*--------------- programme client -----------------------*/
@@ -51,7 +59,6 @@ static void purger(void)
 {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
-
 }
 
 void level_choice(){
@@ -74,33 +81,98 @@ void level_choice(){
 	}
 }
 
-void remplir_tab_user(char* tab){
+void remplir_tab_user(){
 	char inserer=0;
-	printf("Les couleurs sont : r,y,g,b,o,p,f,w\n");
 	int i;
 	for (i = 0; i < TAB_SIZE; ++i)
-	{	printf("Choisissez la %dieme couleur ",i+1);
+	{
+		printf("Les couleurs sont :\nr : red \ny ; yellow \ng : green \nb : blue \no : orange \np : purple \nf : fushia \nw : white\n");
+		printf("Choisissez le pion numéro %d :  ",i+1);
 		scanf("%c",&inserer);
 		purger();
-		*(tab+i)=inserer;
+		*(tab_user+i)=inserer;
+		show_screen();
 	}
 }
 
-void start_client(char* tab_user)
+void start_client()
 {      
+	show_indice = 2;
 	level_choice();
 	purger();
 	remplir_tab_user(tab_user);
-	printf("\n Taille de la grille : %d\n",TAB_SIZE);
-	afficher_tab(tab_user);
 }
 
-int check_tab(char* tab_answer){
+int check_tab(){
   int i;
   for (i=0 ; i<TAB_SIZE;i++ ){
     if ( tab_answer[i] != 'r') return 0;
   }
   return 1;
+}
+
+//Gère l'affichage à l'écran
+void show_header(int with){
+	int i;
+	for (i = 0; i < ((with - 19)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","-------------------" );
+	for (i = 0; i < ((with - 19)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","Mastermind en ligne" );
+	for (i = 0; i < ((with - 19)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","-------------------" );
+}
+
+void show_tab_user(int with){
+	
+	printf("%s\n","Votre grille : " );
+	afficher_tab(tab_user);
+}
+
+void show_tab_answer(int with){
+	printf("%s\n","La grille réponse : " );
+	afficher_tab(tab_answer);
+	printf("%s\n","r : bonne position, w : présent mais pas bonne position, case vide : absent de la grille" );
+}
+
+void show_victory(int with,int height){
+	int i;
+	for (i=0; i<(height/3);i++) printf("\n");
+	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","----------------------" );
+	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","|     VICTOIRE       |" );
+	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","|  developped by     |" );
+	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","|  Titouan Larnicol  |" );
+	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","|  Pierre  Belabbes  |" );
+	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
+	printf("%s\n","----------------------" );
+}
+
+void show_screen(){
+	system("clear");
+	ioctl(0, TIOCGWINSZ, &w);
+	int with = w.ws_col;
+	int height = w.ws_row;
+	switch(show_indice){
+		case 1 :
+			show_header(with);
+			break;	
+		case 2 :
+			show_header(with);
+			show_tab_user(with);
+			break;
+		case 3 : 
+			show_header(with);
+			show_tab_user(with);
+			show_tab_answer(with); 
+			break;
+		case 4 : 
+			show_header(with);
+			show_victory(with,height); 
+	}
 }
 
 
@@ -158,7 +230,7 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
   serverSockAddr.sin_port = htons(30000);
   serverSockAddr.sin_family = AF_INET;
   inet_aton(server_name, &serverSockAddr.sin_addr.s_addr);
-/* creation de la socket */
+	/* creation de la socket */
   if ( (to_server_socket = socket(AF_INET,SOCK_STREAM,0)) < 0)
     {
       printf("Echec creation socket client\n");
@@ -172,10 +244,12 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
     }
 
   // JEU
-  char* tab_user=malloc(sizeof(char)*TAB_SIZE);
-  start_client(tab_user); // Récupère le niveau de difficulté et la grille de départ du joueur
+  show_indice = 1;
+  show_screen();
+  tab_user=malloc(sizeof(char)*TAB_SIZE);
+  start_client(); // Récupère le niveau de difficulté et la grille de départ du joueur
  
-  char* tab_answer = malloc(sizeof(char)*TAB_SIZE); // Crée la grille dans laquelle seront reçus les réponses
+  tab_answer = malloc(sizeof(char)*TAB_SIZE); // Crée la grille dans laquelle seront reçus les réponses
   int gagner = 0; // booléen de victoire
   
   /* envoie de la taille de la grille */
@@ -190,30 +264,25 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
   // réception du nombre de couleurs trouvé
   h_reads(to_server_socket,tab_answer, sizeof tab_answer);
 
-   
+  show_indice = 3;
+ 
   while(!gagner){
-    gagner = check_tab(tab_answer);
+    gagner = check_tab();
     if(gagner) break;
-    printf("La table de réponse est la suivante : \n");
-    afficher_tab(tab_answer);
-    printf("r : bonne position, w : présent dans la grille mais mauvaise position\n");
-    remplir_tab_user(tab_user);
-    
-    printf("Envoie de la grille :\n");
-    afficher_tab(tab_user);
+    show_screen();
+    remplir_tab_user();
+
     /* envoie de donne et reception */
     h_writes(to_server_socket,tab_user,sizeof(tab_user));
-    
-    //  printf("Début purge");
-    // purger();
-    
+   
     printf("attente de réception de la grille réponse ...\n");
     // réception du nombre de couleurs trouvé
     h_reads(to_server_socket,tab_answer, sizeof tab_answer);
     
   }
   
-  printf("Féliciation vous avez gagné !");
+  show_indice = 4;
+  show_screen();
   
   /* fermeture de la connection */
   h_shutdown(to_server_socket,2);
