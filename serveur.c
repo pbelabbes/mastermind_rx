@@ -97,6 +97,7 @@ void serveur_appli(char *service)
   int mon_address_longueur, lg;
   
   bzero(&mon_address,sizeof(mon_address));
+  //on remplit la structure de notre adresse
   mon_address.sin_port = htons(30000);
   mon_address.sin_family = AF_INET;
   mon_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -115,42 +116,40 @@ void serveur_appli(char *service)
 
   //accept la connexion
     mon_address_longueur = sizeof(client_address);
-    for (;;)
+    for (;;) // on boucle 
     {
+      //on accepte la connexion avec le client
       client_socket = accept(socket_passive,(struct sockaddr *)&client_address,&mon_address_longueur);
     int pid=creation_processus();
     if (pid==0){
+      // processus fils, on ferme la socket serveur
       close(socket_passive);
     }
     else
+      //processus père, on ferme la socket client
       close(client_socket);
       //Jeu
   
   //on récup la taille de la grille
   char tab_size_data[1];
+  //lit la donnée envoyé par le client
   h_reads(client_socket,tab_size_data, sizeof(tab_size_data));
   TAB_SIZE = atoi (tab_size_data);
   printf("Taille du tableau : %c\n", tab_size_data[0]);
   
   char* tab_user=malloc(sizeof(char)*TAB_SIZE); // grille joueur
-  static char* tab_to_find=malloc(sizeof(char)*TAB_SIZE); // grille Ã  trouver
-  char* tab_answer=malloc(sizeof(char)*TAB_SIZE); // grille rÃ©ponse
+  static char* tab_to_find=malloc(sizeof(char)*TAB_SIZE); // grille à  trouver
+  char* tab_answer=malloc(sizeof(char)*TAB_SIZE); // grille réponse
   
-  init_tab_find(tab_to_find); //crÃ©e une grille Ã  trouver de maniÃ¨re alÃ©atoire
+  init_tab_find(tab_to_find); //créee une grille à  trouver de manière aléatoire
   
   int partie1=partie(tab_user,tab_to_find,tab_answer,client_socket);
   if (partie1==0) printf("Fin de la partie\n");
      
     }
     
-  
-  
-
-   
-  //printf("le serveur a recu: %s\n",buffer);
-  //sprintf(buffer,"%s du serveur",buffer);
-  //write(client_socket,buffer, 512);
   shutdown(client_socket,2);
+  //ferme la socket client
   close(client_socket);
 }
 
@@ -158,6 +157,7 @@ void serveur_appli(char *service)
 /******************************************************************************/	
 int creation_processus(){
   int pid;
+  //on crée notre processus avec le pid associé?(0 pour le fils)
   pid=fork();
   return pid;
 }
@@ -192,7 +192,7 @@ int jouer_tour(char* tab_user,char* tab_to_find,char* tab_answer){
   int i;
   for( i = 0; i<TAB_SIZE;i++){
     char cc = tab_user[i];
-    printf("CaractÃ¨re courant : %d est %c\n",i,tab_user[i]);
+    printf("Caractère courant : %d est %c\n",i,tab_user[i]);
     afficher_tab1(tab_answer);
     if (tab_answer[i] != 'r' && tab_answer[i] != 'w'){
       //printf("tab_answer[%d] != 'r' et 'w'\n",i);
@@ -223,7 +223,7 @@ int jouer_tour(char* tab_user,char* tab_to_find,char* tab_answer){
       }
     }
   }
-  printf("Table rÃ©ponse\n");
+  printf("Table réponse\n");
   afficher_tab1(tab_answer);
   return (r == TAB_SIZE);
 }
@@ -234,13 +234,13 @@ int jouer_tour(char* tab_user,char* tab_to_find,char* tab_answer){
 int partie(char* tab_user,char* tab_to_find,char* tab_answer,int client_socket)
 {	
   //affiche le tableaux Ã  trouver(utile pour tester le programme)
-  printf("(Grille Ã  trouver = ");
+  printf("(Grille à  trouver = ");
   afficher_tab1(tab_to_find);
   //effectue un tour(test si tab user== tab find)
   
   // ATTENTE DE LA GRILLE DU JOUEUR
   h_reads(client_socket,tab_user,sizeof(tab_user));
-  printf("Grille reÃ§ue");
+  printf("Grille reçue");
   afficher_tab1(tab_user);
   int continu = 1;
   while (continu){

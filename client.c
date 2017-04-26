@@ -134,23 +134,6 @@ void show_tab_answer(int with){
 	printf("%s\n","r : bonne position, w : présent mais pas bonne position, case vide : absent de la grille" );
 }
 
-void show_victory(int with,int height){
-	int i;
-	for (i=0; i<(height/3);i++) printf("\n");
-	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
-	printf("%s\n","----------------------" );
-	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
-	printf("%s\n","|     VICTOIRE       |" );
-	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
-	printf("%s\n","|  developped by     |" );
-	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
-	printf("%s\n","|  Titouan Larnicol  |" );
-	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
-	printf("%s\n","|  Pierre  Belabbes  |" );
-	for (i = 0; i < ((with - 23)/2);i++ ) printf("%c",' '); 
-	printf("%s\n","----------------------" );
-}
-
 void show_screen(){
 	system("clear");
 	ioctl(0, TIOCGWINSZ, &w);
@@ -219,8 +202,6 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
   struct sockaddr_in serverSockAddr;
   struct hostent *serverHostEnt;
   long hostAddr;
-  long status;
-  char buffer[512];
   
   
   bzero(&serverSockAddr,sizeof(serverSockAddr));
@@ -228,6 +209,7 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
   
   serverSockAddr.sin_port = htons(30000);
   serverSockAddr.sin_family = AF_INET;
+  //remplit la structure de notre socket avec l'ip du serveur
   inet_aton(serveur, &serverSockAddr.sin_addr.s_addr);
 	/* creation de la socket */
   if ( (to_server_socket = socket(AF_INET,SOCK_STREAM,0)) < 0)
@@ -265,7 +247,7 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
 
   show_indice = 3;
  
-  while(!gagner){
+  while(!gagner){ //tant que l'utilisateur ne gagne pas
     gagner = check_tab();
     if(gagner) break;
     show_screen();
