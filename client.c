@@ -216,7 +216,6 @@ int main(int argc, char *argv[])
 void client_appli (char *serveur,char *service) /* procedure correspondant au traitement du client de votre application */
 {
   int to_server_socket = -1;
-  char *server_name = serveur;
   struct sockaddr_in serverSockAddr;
   struct hostent *serverHostEnt;
   long hostAddr;
@@ -229,7 +228,7 @@ void client_appli (char *serveur,char *service) /* procedure correspondant au tr
   
   serverSockAddr.sin_port = htons(30000);
   serverSockAddr.sin_family = AF_INET;
-  inet_aton(server_name, &serverSockAddr.sin_addr.s_addr);
+  inet_aton(serveur, &serverSockAddr.sin_addr.s_addr);
 	/* creation de la socket */
   if ( (to_server_socket = socket(AF_INET,SOCK_STREAM,0)) < 0)
     {
